@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Where In New York City Are Inspection Results Most Often Critical? | A Data Story</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <!-- D3.js and TopoJSON for Interactive Globe -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        serif: ['"Playfair Display"', 'serif'],
+                    },
+                    colors: {
+                        urbanRed: '#991b1b',
+                        urbanDark: '#0f172a',
+                        urbanCard: '#1e293b',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-red-900 selection:text-white overflow-x-hidden">
+
+    <!-- Atmospheric background glow effects -->
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-red-900/10 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/3 -right-40 w-96 h-96 bg-blue-900/10 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-10 left-1/3 w-96 h-96 bg-amber-900/10 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-amber-600 flex items-center justify-center font-bold text-white shadow-lg shadow-red-900/30">
+                    NYC
+                </div>
+                <span class="font-serif text-sm md:text-lg font-bold tracking-tight text-white hidden sm:inline">Where In New York City Are Inspection Results Most Often Critical?</span>
+            </div>
+            <nav class="hidden lg:flex items-center space-x-6 text-xs font-medium text-slate-300">
+                <a href="#context-maps" class="hover:text-red-400 transition">Study Area</a>
+                <a href="#critical-inspections" class="hover:text-red-400 transition">Inspection</a>
+                <a href="#mean-scores" class="hover:text-red-400 transition">Cuisine & Scores</a>
+                <a href="#demographics" class="hover:text-red-400 transition">Density & Income</a>
+                <a href="#policy-conclusion" class="hover:text-red-400 transition">Conclusion</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section: Magazine Style -->
+    <section class="relative pt-36 pb-20 md:pt-48 md:pb-28 border-b border-slate-800/60 bg-gradient-to-b from-slate-900/80 via-slate-950 to-slate-950 z-10">
+        <div class="max-w-5xl mx-auto px-6">
+            <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-red-950/60 border border-red-800/50 text-red-400 text-xs font-semibold tracking-wider uppercase mb-6 shadow-sm">
+                <span>New York City (2024–2026)</span>
+            </div>
+            <h1 class="font-serif text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.08]">
+                Where In New York City Are Inspection Results Most Often Critical?
+            </h1>
+            <p class="text-lg md:text-xl text-slate-300 font-light leading-relaxed max-w-3xl mb-10">
+                An exploration of who really is affected by poor restaurant operations by comparing population density, median household income, and official restaurant inspection results.
+            </p>
+
+            <!-- Story Intro Card -->
+            <div class="bg-slate-900/90 border border-slate-800/80 rounded-3xl p-6 md:p-10 shadow-2xl backdrop-blur-md relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-red-600/5 rounded-full blur-2xl"></div>
+                <div class="flex items-start space-x-5">
+                    <div class="w-12 h-12 rounded-2xl bg-red-900/40 border border-red-700/50 flex-shrink-0 flex items-center justify-center font-bold text-red-400 text-xl font-serif shadow-inner">
+                        §
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white mb-2 tracking-wide uppercase text-xs text-red-400">Introduction</h3>
+                        <p class="text-slate-300 text-sm md:text-base leading-relaxed indent-4" style="margin-bottom: 1.5rem;">
+                            Known as the “The Big Apple”, New York City (NYC) is recognized for its fast-paced lifestyle, cultural diversity, and vibrant food scene. With an abundance of restaurants representing cuisines from around the world, restaurants are an essential part of everyday life for many New Yorkers. With approximately one-third of their calorie intake coming from foods consumed outside the home, New Yorkers must be conscious of the quality and safety of the food they consume (Wong et al., 2015). As residents spend a significant portion of their day away from home, restaurant cleanliness, food safety, and access to quality food becomes important.
+                        </p>
+                        <p class="text-slate-300 text-sm md:text-base leading-relaxed" style="margin-bottom: 1.5rem;">
+                            Given NYC’s extensive restaurant industry across its boroughs, it is important to explore and understand the restaurant inspection results and compare them between the boroughs. Our study examines the relationship between socioeconomic and demographic characteristics, particularly the median household income and population distribution, and the restaurant inspection results managed by the NYC Department of Health and Mental Hygiene (DOHMH).
+                        </p>
+                        <p class="text-slate-300 text-sm md:text-base leading-relaxed" style="margin-bottom: 1.5rem;">
+                            Using the restaurant inspection data along with the income and population data for each borough, we will investigate the geography distribution of critical and non-critical violations and compare average inspection scores across different cuisine categories and boroughs. Through these comparisons, we aim to identify patterns and explore whether differences in the inspection results are associated with socioeconomic characteristics of the boroughs in which they operate in. Understanding these patterns can help identify the areas that may require greater attentions from public health authorities, inform food safety policies, encourage a safer food environment across NYC, and critically evaluate the US healthcare system.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Container with Non-Linear Editorial Flow -->
+    <main class="max-w-6xl mx-auto px-6 py-16 space-y-32 z-10 relative">
+
+        <!-- SECTION 1: Context Maps (Interactive US Globe & NYC Boroughs Side-by-Side + Borough Explorer) -->
+        <section id="context-maps" class="scroll-mt-32 space-y-12">
+            <div class="text-center max-w-2xl mx-auto space-y-3">
+                <span class="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-slate-900 text-slate-300 border border-slate-800">Study Area</span>
+                <h2 class="font-serif text-3xl md:text-4xl font-bold text-white">New York City within the United States of America</h2>
+                <p class="text-sm text-slate-400">Our data is aggregated and interpreted at two scales; the census tract and larger boroughs which are composed of multiple census tracts. </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Map of US (Interactive 3D Globe) -->
+                <div class="bg-slate-900/70 border border-slate-800/80 rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col justify-between backdrop-blur-sm group hover:border-slate-700 transition duration-300">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <span class="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">Interactive Globe</span>
+                        </div>
+                        <h3 class="font-serif text-xl md:text-2xl font-bold text-white mb-4">
+                            Map of US
+                        </h3>
+
+                        <!-- Interactive 3D Globe Container -->
+                        <div id="us-globe-wrapper" class="bg-[#07090e] border border-slate-800 rounded-2xl mb-4 overflow-hidden relative w-full h-[380px] md:h-[440px] select-none cursor-grab active:cursor-grabbing" style="background: radial-gradient(circle at 50% 48%, #0c1018 0%, #07090e 100%);">
+                            <canvas id="us-globe-canvas" class="w-full h-full block"></canvas>
+
+                            <!-- Compact Bottom-Left Controls -->
+                            <div class="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md border border-slate-800/90 rounded-full px-2.5 py-1 text-xs text-slate-300 shadow-lg">
+                                <button type="button" id="globe-zoom-out" title="Zoom Out" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-slate-800 hover:text-white transition font-semibold">−</button>
+                                <button type="button" id="globe-zoom-in" title="Zoom In" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-slate-800 hover:text-white transition font-semibold">+</button>
+                                <span class="w-px h-3.5 bg-slate-800 mx-0.5"></span>
+                                <button type="button" id="globe-rotate-toggle" class="px-2 py-0.5 rounded-full hover:bg-slate-800 hover:text-white transition text-[11px] text-amber-300">Auto-Rotate</button>
+                                <button type="button" id="globe-reset" class="px-2 py-0.5 rounded-full hover:bg-slate-800 hover:text-white transition text-[11px]">Reset</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NYC Boroughs Map -->
+                <div class="bg-slate-900/70 border border-slate-800/80 rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col justify-between backdrop-blur-sm group hover:border-slate-700 transition duration-300">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <span class="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">Map</span>
+                        </div>
+                        <h3 class="font-serif text-xl md:text-2xl font-bold text-white mb-4">
+                            NYC can be categorized into five distinct boroughs
+                        </h3>
+                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-2 mb-4 overflow-hidden cursor-pointer group/img relative" onclick="openModal('nyc_boroughs.jpg', 'NYC can be categorized into five distinct boroughs')">
+                            <img src="NYC_Borough.jpg" class="w-full h-auto rounded-xl shadow-md group-hover/img:scale-[1.02] transition duration-300">
+                            <div class="absolute inset-0 bg-slate-950/30 opacity-0 group-hover/img:opacity-100 transition flex items-center justify-center">
+                                <span class="bg-slate-900/90 text-white text-xs px-3 py-1.5 rounded-full border border-slate-700 shadow-lg">Click to Enlarge</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Borough Quick Explorer (Fun Feature) -->
+            <div class="bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h4 class="font-serif text-xl font-bold text-white">Borough Explorer</h4>
+                        <p class="text-xs text-slate-400">Select a borough for quick summary of our data exploration.</p>
+                    </div>
+                    <span class="text-xs font-semibold text-red-400 bg-red-950/60 px-3 py-1.5 rounded-full border border-red-800/40 self-start md:self-auto">Click buttons below</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+                    <button onclick="selectBorough('manhattan')" id="btn-manhattan" class="px-4 py-3 rounded-2xl text-xs font-semibold bg-red-950 text-red-300 border border-red-800 transition shadow-sm hover:scale-105">Manhattan</button>
+                    <button onclick="selectBorough('brooklyn')" id="btn-brooklyn" class="px-4 py-3 rounded-2xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-red-950 hover:text-red-300 border border-slate-700 transition shadow-sm hover:scale-105">Brooklyn</button>
+                    <button onclick="selectBorough('queens')" id="btn-queens" class="px-4 py-3 rounded-2xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-red-950 hover:text-red-300 border border-slate-700 transition shadow-sm hover:scale-105">Queens</button>
+                    <button onclick="selectBorough('bronx')" id="btn-bronx" class="px-4 py-3 rounded-2xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-red-950 hover:text-red-300 border border-slate-700 transition shadow-sm hover:scale-105">Bronx</button>
+                    <button onclick="selectBorough('staten')" id="btn-staten" class="px-4 py-3 rounded-2xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-red-950 hover:text-red-300 border border-slate-700 transition col-span-2 sm:col-span-1 shadow-sm hover:scale-105">Staten Island</button>
+                </div>
+                <div id="borough-info-box" class="bg-slate-950 border border-slate-800/80 rounded-2xl p-5 text-sm text-slate-300 shadow-inner">
+                    <p class="font-bold text-white text-base mb-1">Manhattan</p>
+                    <p class="text-slate-300 text-xs md:text-sm leading-relaxed">Extremely dense with the larger population residing in one of the smallest boroughs. Our data shows higher income households distributed densely across several many tracts within the borough, where there is also a moderate count of critical inspection results.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: Critical Inspections Map (Asymmetric Storytelling Layout) -->
+        <section id="critical-inspections" class="scroll-mt-32">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="inline-flex items-center space-x-3">
+                        <span class="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded bg-red-950 text-red-400 border border-red-900">Map</span>
+                    </div>
+                    <h2 class="font-serif text-3xl md:text-4xl font-bold text-white leading-tight">
+                       Percentage of Critical Inspection Result Count per Census Tract in New York City, 2024-2026
+                    </h2>
+                    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
+                        <h4 class="font-semibold text-white text-base text-red-400">Staten Island has a problem?</h4>
+                        <p class="text-slate-300 text-sm leading-relaxed">
+                            The map visualizes critical 2024-2026 health inspection violations across New York City by census tract. The Darker crimson tones indicate tracts where higher percentage of recorded inspection results are flagged as critical hazards, deeming foods from these food retail places unsafe for consumption.Our results show Staten Island as the most frequent in receiving low letter grading; restaurants here, tend to perform quite poorly.
+                        </p>
+                        <div class="text-xs text-slate-400 pt-3 border-t border-slate-800/80 space-y-1">
+                            <div><strong class="text-slate-300">Source:</strong> NYC Open Data, NYC Department of Planning</div>
+                            <div><strong class="text-slate-300">Spatial Reference:</strong> NAD1983 StatePlane New York Long Isl FIPS 3104 (US Feet)</div>
+                            <div><strong class="text-slate-300">Authors:</strong> Laiba Malik & Shruti Kaushish</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:col-span-7">
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-3 md:p-4 shadow-2xl overflow-hidden cursor-pointer group" onclick="openModal('Inspection.jpg', 'Percentage of Critical Inspection Result Count per Census Tract in New York City, 2024-2026')">
+                        <img src="Inspection.jpg" alt="Percentage of Critical Inspection Result Count per Census Tract in New York City, 2024-2026" class="w-full h-auto rounded-2xl shadow-lg group-hover:scale-[1.01] transition duration-300">
+                        <p class="text-center text-xs text-slate-400 mt-3 font-medium">🔍 Click map to expand full screen</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: Mean Inspection Score Chart (Spotlight Banner Layout) -->
+        <section id="mean-scores" class="scroll-mt-32">
+            <div class="bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 border border-slate-800 rounded-3xl p-6 md:p-10 shadow-2xl space-y-8">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800 pb-6">
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-900">Visual</span>
+                        </div>
+                        <h2 class="font-serif text-2xl md:text-3xl font-bold text-white">
+                           NYC Mean Inspection Score by Cuisine and Borough, 2024-2026
+                        </h2>
+                    </div>
+                    <span class="text-xs text-slate-400 font-medium bg-slate-950 px-3 py-1.5 rounded-full border border-slate-800 self-start">Source: NYC Department of City Planning</span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <div class="lg:col-span-7">
+                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3 shadow-xl overflow-hidden cursor-pointer group" onclick="openModal('Heat Map copy.png', 'NYC Mean Inspection Score by Cuisine and Borough, 2024-2026')">
+                            <img src="Heat Map copy.png" alt="NYC Mean Inspection Score by Cuisine and Borough, 2024-2026" class="w-full h-auto rounded-xl shadow-md group-hover:scale-[1.01] transition duration-300">
+                            <p class="text-center text-xs text-slate-400 mt-3 font-medium">🔍 Click chart to expand full screen</p>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-5 space-y-4">
+                        <h4 class="font-semibold text-white text-base text-emerald-400">Latin American restaurants in Staten Island are more likely to receive poor inspection grades</h4>
+                        <p class="text-slate-300 text-sm leading-relaxed">
+                            The chart organizes the data to present a varying difference between borough and cuisine when compared to recorded inspection results. Interestingly, Latin American restaurants in Staten Island perform worst while restaurants serving Italian food across all Boroughs, especially Bronx seemingly perform relatively well during official inspection visits.
+                        </p>
+                        <div class="text-xs text-slate-400 pt-2 border-t border-slate-800/80">
+                            <span>Authors: Laiba Malik & Shruti Kaushish</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: Demographics - Population Density & Median Household Income (Dynamic Duo Layout) -->
+        <section id="demographics" class="scroll-mt-32 space-y-16">
+            <div class="text-center max-w-2xl mx-auto space-y-3">
+                <span class="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-slate-900 text-slate-300 border border-slate-800">Socio-economic variables</span>
+                <h2 class="font-serif text-3xl md:text-4xl font-bold text-white">Population Density & Wealth</h2>
+                <p class="text-sm text-slate-400">Does wealth or population distribution play a role?</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <!-- Population Density Section -->
+                <section id="population-density" class="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col justify-between hover:border-slate-700 transition duration-300">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <span class="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded bg-cyan-950 text-cyan-400 border border-cyan-900">Map</span>
+                        </div>
+                        <h3 class="font-serif text-xl md:text-2xl font-bold text-white mb-4">
+                           Population Density Across New York City per Census Tract in 2024
+                        </h3>
+
+                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-2 mb-6 overflow-hidden cursor-pointer group" onclick="openModal('PopDen.jpg', 'Population Density Across New York City per Census Tract in 2024')">
+                            <img src="PopDen.jpg" alt="Population Density Across New York City per Census Tract in 2024" class="w-full h-auto rounded-xl shadow-md group-hover:scale-[1.01] transition duration-300">
+                            <p class="text-center text-xs text-slate-400 mt-2">🔍 Click to enlarge</p>
+                        </div>
+
+                        <div class="space-y-3">
+                            <h4 class="font-semibold text-white text-base text-cyan-400">Boroughs; Manhattan, Bronx and Brooklyn are quite dense</h4>
+                            <p class="text-slate-300 text-sm leading-relaxed">
+                              This visualization maps population density across New York City revealing tracts within Manhattan, Bronx and Brooklyn as denser than Staten Island and Northern/Southern Eastern portions of Queens. For our research, this means Staten Island restaurants tend to be less busy than those denser areas such as Manhattan, Bronx and Brooklyn.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="text-xs text-slate-400 pt-4 mt-6 border-t border-slate-800/80 space-y-1">
+                        <div><strong class="text-slate-300">Source:</strong> NYC Department of City Planning, US Census Bureau</div>
+                        <div><strong class="text-slate-300">Spatial Reference:</strong> NAD1983 StatePlane New York Long Island FIPS 3104 Feet</div>
+                        <div><strong class="text-slate-300">Authors:</strong> Laiba Malik & Shruti Kaushish</div>
+                    </div>
+                </section>
+
+                <!-- Median Household Income Section -->
+                <section id="household-income" class="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col justify-between hover:border-slate-700 transition duration-300">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <span class="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded bg-blue-950 text-blue-400 border border-blue-900">Map</span>
+                        </div>
+                        <h3 class="font-serif text-xl md:text-2xl font-bold text-white mb-4">
+                           Median Household Income Across New York City per Census Tract in 2024
+                        </h3>
+
+                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-2 mb-6 overflow-hidden cursor-pointer group" onclick="openModal('MedHI.jpg', 'Median Household Income Across New York City per Census Tract in 2024')">
+                            <img src="MedHI.jpg" alt="Median Household Income Across New York City per Census Tract in 2024" class="w-full h-auto rounded-xl shadow-md group-hover:scale-[1.01] transition duration-300">
+                            <p class="text-center text-xs text-slate-400 mt-2">🔍 Click to enlarge</p>
+                        </div>
+
+                        <div class="space-y-3">
+                            <h4 class="font-semibold text-white text-base text-blue-400">Staten Island, Manhattan, and fragments of Queens show dense distribution of higher income households</h4>
+                            <p class="text-slate-300 text-sm leading-relaxed">
+                                This map shows the distribution of median household income across NYC’s five boroughs.Staten Island, Manhattan, and parts of Queens display a higher median household income, this highlights an uneven distribution of wealth across the city. In contrast, Bronx and southern Queens have a higher concentration of low-income households. These patterns show the socioeconomic disparities between different areas of NYC. These differences provide an important context for comparing whether variations in restaurant inspections results are associated with the median household income of the boroughs in which the restaurants operate in.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="text-xs text-slate-400 pt-4 mt-6 border-t border-slate-800/80 space-y-1">
+                        <div><strong class="text-slate-300">Source:</strong>NYC Department of Planning, US Census Bureau</div>
+                        <div><strong class="text-slate-300">Spatial Reference:</strong> NAD1983 PlaneState New York Island FIPS 3104 Feet</div>
+                        <div><strong class="text-slate-300">Map Creator:</strong> Laiba Malik & Shruti Kaushish</div>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <!-- SECTION 5: Conclusion (Separate Closing Hero Card) -->
+        <section id="policy-conclusion" class="scroll-mt-32">
+            <div class="bg-gradient-to-r from-red-950/40 via-slate-900 to-amber-950/40 border border-amber-900/50 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden">
+                <div class="absolute -right-20 -bottom-20 w-64 h-64 bg-amber-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="max-w-3xl space-y-6 relative z-10">
+                    <div class="inline-flex items-center space-x-3">
+                        <span class="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-amber-950 text-amber-400 border border-amber-900">Final Takeaway</span>
+                    </div>
+                    <h2 class="font-serif text-3xl md:text-4xl font-bold text-white">
+                        Conclusion
+                    </h2>
+                    <p class= "text-slate-300 text-sm md:text-base leading-relaxed font-light">
+                        Our data exploration highlights Staten Island as performing significantly worse in restaurant food inspections especially places serving Latin American cuisine.This is interesting as the borough is lowest in density and wealth seems to play no significant role. However, despite all this we want our analysis to encourage the consumer to check official health & food inspection results on the NYC ABCEats site and familiarize themselves with the New York letter grading system; rather simply trusting social media. It is important to note influencers may not understand or recognize what goes on beyond the counter, but official health inspectors do. The US Healthcare system is costly and many may choose to avoid visiting to save on the possibility of a considerably large bill at the expense of their health. When restaurants are often operating under insanitary conditions in lower income neighbourhoods such as those infrequent tracts within Staten Island, all of Bronx and Southern Queens; an invisible type of injustice is produced where such populations are more likely to fall sick and question themselves on whether they should spend a significant amount on healthcare.This is especially dangerous for those more vulnerable including young children, pregnant women, the elderly and those with a weaker immune system.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Interactive Image Modal Lightbox -->
+    <div id="imageModal" class="fixed inset-0 z-50 bg-black/95 hidden items-center justify-center p-4 backdrop-blur-md">
+        <div class="relative max-w-5xl w-full bg-slate-900 border border-slate-800 rounded-3xl p-5 overflow-hidden shadow-2xl">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+                <h3 id="modalTitle" class="font-serif text-lg md:text-xl font-bold text-white"></h3>
+                <button onclick="closeModal()" class="w-10 h-10 rounded-full bg-slate-800 text-slate-300 hover:bg-red-900 hover:text-white flex items-center justify-center font-bold text-xl transition">&times;</button>
+            </div>
+            <div class="flex justify-center items-center max-h-[75vh] overflow-auto p-2">
+                <img id="modalImage" src="" alt="Enlarged View" class="max-h-[72vh] w-auto rounded-2xl shadow-2xl object-contain">
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-950 py-16 mt-32 z-10 relative">
+        <div class="max-w-5xl mx-auto px-6 text-center space-y-4">
+            <p class="font-serif text-lg font-bold text-white">Where In New York City Are Inspection Results Most Often Critical?</p>
+            <p class="text-sm text-slate-400">Created by Laiba Malik & Shruti Kaushish • Department of Geography & Planning, University of Toronto</p>
+            <p class="text-xs text-slate-600">References: Wong, M. R., McKelvey, W., Ito, K., Schiff, C., Jacobson, J. B., & Kass, D. (2015). Impact of a letter-grade program on restaurant sanitary conditions and diner behavior in New York City. <em>American journal of public health</em>, 105(3), e81-e87.</p>
+        </div>
+    </footer>
+
+    <!-- Interactive Scripts: Globe with NY Star, Borough Explorer & Lightbox -->
+    <script>
+        // 1. Interactive 3D US Globe with Star on New York State
+        (async function initGlobe() {
+            const wrapper = document.getElementById('us-globe-wrapper');
+            const canvas = document.getElementById('us-globe-canvas');
+            if (!wrapper || !canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            // Geographic centroid of New York State [longitude, latitude]
+            const NY_STATE_COORDS = [-75.5, 42.9];
+            const DEFAULT_ROTATION = [76, -40, 0];
+
+            let rotation = [...DEFAULT_ROTATION];
+            let zoom = 1;
+            let autoRotate = false;
+            let dragging = false;
+            let prevMouse = null;
+
+            let land = null;
+            let states = null;
+            let nyFeature = null;
+
+            try {
+                const [worldTopo, usTopo] = await Promise.all([
+                    d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'),
+                    d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
+                ]);
+                land = topojson.feature(worldTopo, worldTopo.objects.land);
+                states = topojson.feature(usTopo, usTopo.objects.states);
+                // FIPS code 36 = New York State
+                nyFeature = states.features.find(d => String(d.id) === '36');
+            } catch (err) {
+                console.error('Map data failed to load. Please view via a local server (e.g. Live Server in VS Code/PyCharm):', err);
+            }
+
+            const projection = d3.geoOrthographic().clipAngle(90);
+            const path = d3.geoPath(projection, ctx);
+
+            function drawStar(cx, cy, spikes, outerR, innerR) {
+                let rot = (Math.PI / 2) * 3;
+                const step = Math.PI / spikes;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(cx, cy - outerR);
+                for (let i = 0; i < spikes; i++) {
+                    ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+                    rot += step;
+                    ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+                    rot += step;
+                }
+                ctx.closePath();
+
+                ctx.shadowColor = '#fbbf24';
+                ctx.shadowBlur = 14;
+                ctx.fillStyle = '#fbbf24';
+                ctx.fill();
+                ctx.lineWidth = 1.3;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            function render() {
+                const dpr = window.devicePixelRatio || 1;
+                const width = wrapper.clientWidth || 450;
+                const height = wrapper.clientHeight || 420;
+
+                if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+                    canvas.width = width * dpr;
+                    canvas.height = height * dpr;
+                }
+
+                ctx.save();
+                ctx.scale(dpr, dpr);
+                ctx.clearRect(0, 0, width, height);
+
+                const radius = Math.min(width, height) * 0.44 * zoom;
+                projection
+                    .translate([width / 2, height / 2])
+                    .scale(radius)
+                    .rotate(rotation);
+
+                // Ocean Sphere
+                ctx.beginPath();
+                path({ type: 'Sphere' });
+                ctx.fillStyle = '#090d16';
+                ctx.fill();
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // Graticule Grid
+                ctx.beginPath();
+                path(d3.geoGraticule10());
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.08)';
+                ctx.lineWidth = 0.6;
+                ctx.stroke();
+
+                // World Landmasses
+                if (land) {
+                    ctx.beginPath();
+                    path(land);
+                    ctx.fillStyle = '#151e2e';
+                    ctx.fill();
+                    ctx.strokeStyle = '#334155';
+                    ctx.lineWidth = 0.7;
+                    ctx.stroke();
+                }
+
+                // US State Borders
+                if (states) {
+                    ctx.beginPath();
+                    path(states);
+                    ctx.fillStyle = '#1e293b';
+                    ctx.fill();
+                    ctx.strokeStyle = '#475569';
+                    ctx.lineWidth = 0.75;
+                    ctx.stroke();
+                }
+
+                // Highlight New York State Polygon in Crimson
+                if (nyFeature) {
+                    ctx.beginPath();
+                    path(nyFeature);
+                    ctx.fillStyle = 'rgba(220, 38, 38, 0.55)';
+                    ctx.fill();
+                    ctx.strokeStyle = '#f87171';
+                    ctx.lineWidth = 1.4;
+                    ctx.stroke();
+                }
+
+                // Star Marker on Top of New York State
+                const distFromCenter = d3.geoDistance(NY_STATE_COORDS, [-rotation[0], -rotation[1]]);
+                if (distFromCenter < Math.PI / 2) {
+                    const pt = projection(NY_STATE_COORDS);
+                    if (pt) {
+                        const [sx, sy] = pt;
+                        drawStar(sx, sy, 5, 8.5, 4);
+
+                        ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
+                        ctx.fillStyle = '#fef3c7';
+                        ctx.fillText('New York State', sx + 12, sy + 4);
+                    }
+                }
+
+                ctx.restore();
+            }
+
+            // Mouse & Touch Drag Controls
+            wrapper.addEventListener('pointerdown', (e) => {
+                dragging = true;
+                prevMouse = [e.clientX, e.clientY];
+                wrapper.setPointerCapture(e.pointerId);
+            });
+
+            wrapper.addEventListener('pointermove', (e) => {
+                if (!dragging || !prevMouse) return;
+                const dx = e.clientX - prevMouse[0];
+                const dy = e.clientY - prevMouse[1];
+                prevMouse = [e.clientX, e.clientY];
+                const speed = 0.35 / zoom;
+                rotation[0] += dx * speed;
+                rotation[1] = Math.max(-85, Math.min(85, rotation[1] - dy * speed));
+                render();
+            });
+
+            wrapper.addEventListener('pointerup', () => {
+                dragging = false;
+                prevMouse = null;
+            });
+
+            // Scroll Wheel Zoom
+            wrapper.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                zoom = Math.max(0.75, Math.min(5, zoom * (e.deltaY < 0 ? 1.12 : 0.9)));
+                render();
+            }, { passive: false });
+
+            // UI Button Handlers
+            document.getElementById('globe-zoom-in')?.addEventListener('click', () => {
+                zoom = Math.min(5, zoom * 1.25);
+                render();
+            });
+
+            document.getElementById('globe-zoom-out')?.addEventListener('click', () => {
+                zoom = Math.max(0.75, zoom / 1.25);
+                render();
+            });
+
+            document.getElementById('globe-rotate-toggle')?.addEventListener('click', (e) => {
+                autoRotate = !autoRotate;
+                e.target.classList.toggle('text-amber-300', autoRotate);
+            });
+
+            document.getElementById('globe-reset')?.addEventListener('click', () => {
+                rotation = [...DEFAULT_ROTATION];
+                zoom = 1;
+                autoRotate = false;
+                render();
+            });
+
+            d3.timer(() => {
+                if (autoRotate && !dragging) {
+                    rotation[0] += 0.25;
+                    render();
+                }
+            });
+
+            window.addEventListener('resize', render);
+            render();
+        })();
+
+        // 2. Borough Quick Explorer
+        const boroughSummaries = {
+            manhattan: {
+                title: 'Manhattan',
+                text: 'Extremely dense with the larger population residing in one of the smallest boroughs. Our data shows higher income households distributed densely across several many tracts within the borough, where there is also a moderate count of critical inspection results.'
+            },
+            brooklyn: {
+                title: 'Brooklyn',
+                text: 'High population density paired with mixed household income tracts. Critical inspection percentages vary substantially across neighborhoods, clustering along dense commercial corridors.'
+            },
+            queens: {
+                title: 'Queens',
+                text: 'Socioeconomically diverse with moderate-to-high population density in northern and western tracts, while southern Queens contains higher concentrations of lower-income households.'
+            },
+            bronx: {
+                title: 'Bronx',
+                text: 'High population density combined with lower median household incomes ($39,000–$76,000), creating heightened vulnerability where sanitary violations occur.'
+            },
+            staten: {
+                title: 'Staten Island',
+                text: 'Lowest population density and relatively high median household income, yet exhibits the highest percentage of critical inspection results—especially among Latin American restaurants.'
+            }
+        };
+
+        function selectBorough(key) {
+            const data = boroughSummaries[key];
+            if (!data) return;
+            document.getElementById('borough-info-box').innerHTML = `
+                <p class="font-bold text-white text-base mb-1">${data.title}</p>
+                <p class="text-slate-300 text-xs md:text-sm leading-relaxed">${data.text}</p>
+            `;
+            ['manhattan', 'brooklyn', 'queens', 'bronx', 'staten'].forEach(b => {
+                const btn = document.getElementById('btn-' + b);
+                if (!btn) return;
+                btn.className = b === key
+                    ? 'px-4 py-3 rounded-2xl text-xs font-semibold bg-red-950 text-red-300 border border-red-800 transition shadow-sm hover:scale-105'
+                    : 'px-4 py-3 rounded-2xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-red-950 hover:text-red-300 border border-slate-700 transition shadow-sm hover:scale-105';
+            });
+        }
+
+        // 3. Image Lightbox Modal
+        function openModal(src, title) {
+            const modal = document.getElementById('imageModal');
+            document.getElementById('modalImage').src = src;
+            document.getElementById('modalTitle').textContent = title;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    </script>
+</body>
+</html>
